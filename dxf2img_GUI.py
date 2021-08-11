@@ -11,7 +11,8 @@ class DXF2IMG(object):
 
     default_img_format = '.png'
     default_img_res = 300
-    def convert_dxf2img(self, names, img_format=default_img_format, img_res=default_img_res):
+    default_bg_color = '#FFFFFF' #White
+    def convert_dxf2img(self, names, img_format=default_img_format, img_res=default_img_res, clr=default_bg_color):
         for name in names:
             doc = ezdxf.readfile(name)
             msp = doc.modelspace()
@@ -26,7 +27,7 @@ class DXF2IMG(object):
                 ax = fig.add_axes([0, 0, 1, 1])
                 ctx = RenderContext(doc)
                 ctx.set_current_layout(msp)
-                ctx.current_layout.set_colors(bg='#FFFFFF')
+                ezdxf.addons.drawing.properties.MODEL_SPACE_BG_COLOR = clr
                 out = MatplotlibBackend(ax)
                 Frontend(ctx, out).draw_layout(msp, finalize=True)
 
@@ -36,10 +37,8 @@ class DXF2IMG(object):
 
 
 #================================================================================================
-
+# GUI Section
 user_files = list()
-reso = ''
-formats = ''
 class The_GUI(wx.Frame):
 
     def __init__(self):
@@ -83,21 +82,30 @@ class The_GUI(wx.Frame):
 
         font2 = wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.DEFAULT)
         st2 = wx.StaticText(panel, label='Image Format :',
-                            style=wx.ALIGN_LEFT, pos=(13,250))
+                            style=wx.ALIGN_LEFT, pos=(13,235))
         st2.SetFont(font2)
 
         formats = ['.png','.pdf','.jpg','.tiff']
-        formats_cb = wx.ComboBox(panel, pos=(107, 250), choices=formats,
+        formats_cb = wx.ComboBox(panel, pos=(103, 235), choices=formats,
             style=wx.CB_READONLY)
         formats_cb.Bind(wx.EVT_COMBOBOX, self.on_select_fcb)
 
-        st3 = wx.StaticText(panel, label='Resolution :',
-                            style=wx.ALIGN_LEFT, pos=(180,250))
+        st3 = wx.StaticText(panel, label='Size :',
+                            style=wx.ALIGN_LEFT, pos=(163,235))
         st3.SetFont(font2)
-        reso = ['1080','720','480']
-        reso_cb = wx.ComboBox(panel, pos=(257, 250), choices=reso,
+        reso = ['300','250','200','150','100']
+        reso_cb = wx.ComboBox(panel, pos=(197, 235), choices=reso,
                             style=wx.CB_READONLY)
         reso_cb.Bind(wx.EVT_COMBOBOX,self.on_select_rcb)
+
+        st4 = wx.StaticText(panel, label='BG Color :',
+                            style=wx.ALIGN_LEFT, pos=(250,235))
+
+        st4.SetFont(font2)
+        colors = ['Black', 'White', 'Blue','Red']
+        bg_clr_cb = wx.ComboBox(panel, pos=(310, 235), choices=colors,
+                            style=wx.CB_READONLY)
+        bg_clr_cb.Bind(wx.EVT_COMBOBOX,self.on_select_clr)
 
         convert_btn = wx.Button(panel, label='Convert Files',pos=(270,280))
         convert_btn.Bind(wx.EVT_BUTTON,self.on_convert)
@@ -146,20 +154,37 @@ class The_GUI(wx.Frame):
         dlg.Destroy()
 
 
-    def on_select_fcb(self,event):
+    def on_select_fcb(self, event):
+        global formats
         formats = event.GetString()
 
     def on_select_rcb(self,event):
+        global reso
         reso = event.GetString()
+        reso = int(reso)
+
+    def on_select_clr(self, event):
+        clr_name = event.GetString()
+        global color
+        if clr_name == 'Black':
+            color = '#000000'
+        elif clr_name == 'White':
+            color = '#FFFFFF'
+        elif clr_name == 'Blue':
+            color = '#0000FF'
+        else : color = '#FF0000'
 
 
     def on_convert(self, event):
         first =  DXF2IMG()
-        first.convert_dxf2img(user_files,img_format=formats)
+        if formats and reso and color:
+            first.convert_dxf2img(user_files, img_format=formats, img_res=reso,clr=color )
+        else :
+             wx.MessageBox( 'Please select all things',
+                            'Not selected', wx.OK | wx.ICON_ERROR)
 
 
 if __name__ == '__main__':
     app = wx.App()
     frame = The_GUI()
     app.MainLoop()
-    print(formats)
