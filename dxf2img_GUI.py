@@ -8,6 +8,7 @@ import re
 
 
 class DXF2IMG(object):
+    
 
     default_img_format = '.png'
     default_img_res = 300
@@ -21,7 +22,8 @@ class DXF2IMG(object):
             # The auditor.errors attribute stores severe errors,
             # which *may* raise exceptions when rendering.
             if len(auditor.errors) != 0:
-                raise exception("The DXF document is damaged and can't be converted!")
+                raise Exception("This DXF document is damaged and can't be converted! --> ", name)
+                name = name =+ 1
             else :
                 fig = plt.figure()
                 ax = fig.add_axes([0, 0, 1, 1])
@@ -34,6 +36,8 @@ class DXF2IMG(object):
                 img_name = re.findall("(\S+)\.",name)  # select the image name that is the same as the dxf file name
                 first_param = ''.join(img_name) + img_format  #concatenate list and string
                 fig.savefig(first_param, dpi=img_res)
+                print(name," Converted Successfully")
+
 
 
 #================================================================================================
